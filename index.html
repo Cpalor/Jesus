@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Begin Cpalor.com SEO tag v2.8.0 -->
+<title>极点云计算</title>
+<meta name="generator" content="Cpalor v1.13" />
+<meta property="og:title" content="极点云计算" />
+<meta property="og:locale" content="zh_CN" />
+<link rel="canonical" href="https://www.cpalor.com/" />
+<meta property="og:url" content="https://www.cpalor.com/" />
+<meta property="og:site_name" content="极点云计算" />
+<meta property="og:type" content="WebSite" />
+<meta name="twitter:card" content="Jesus" />
+<meta property="twitter:title" content="极点云计算" />
+<script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebSite","headline":"极点云计算","name":"极点云计算","url":"https://www.cpalor.com/"}
+</script>
+<link rel="stylesheet" href="/assets/css/style.css?v=3bc699bc752522876e7811b89a2b9b5e3e338568">
+</head>
+<body>
+  <div class="container-lg px-3 my-5 markdown-body">
+    <h1 id="website">WebSite</h1>
+      <div id="dropZone" style="border:2px dashed #ccc; padding:20px;">
+        拖拽文件到此区域 或 
+        <input type="file" id="fileInput">
+      </div>
+    <div id="status" style="margin-top:10px;"></div>
+  </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" crossorigin="anonymous"></script>
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+// 生成随机文件名函数
+function generateFileName(originalName) {
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substr(2, 5);
+  const ext = originalName.split('.').pop();
+  return `file_${timestamp}_${randomStr}.${ext}`;
+}
+
+// 拖拽处理
+dropZone.ondragover = e => e.preventDefault();
+dropZone.ondrop = e => {
+  e.preventDefault();
+  handleFiles(e.dataTransfer.files);
+};
+
+// 文件选择处理
+fileInput.onchange = e => handleFiles(e.target.files);
+
+async function handleFiles(files) {
+  const file = files[0];
+  if (!file) return;
+  
+  const newName = generateFileName(file.name);
+  const content = await readFileAsBase64(file);
+  uploadToGithub(newName, content);
+}
+
+function readFileAsBase64(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(btoa(e.target.result));
+    reader.readAsBinaryString(file);
+  });
+}
+
+async function uploadToGithub(filename, content) {
+  const token = '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'; // GitHub Token
+  const repo = 'Jesus';      // 仓库名
+  const owner = 'Cplaor'; // 用户名
+  
+  const statusDiv = document.getElementById('status');
+  statusDiv.textContent = '上传中...';
+
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/uploads/${filename}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Upload ${filename}`,
+          content: content,
+          branch: 'main'
+        })
+      }
+    );
+
+    const result = await response.json();
+    if (response.ok) {
+      statusDiv.innerHTML = `上传成功！<br>
+        文件名：${filename}<br>
+        仓库路径：<a href="${result.content.html_url}" target="_blank">查看文件</a>`;
+    } else {
+      statusDiv.textContent = `上传失败：${result.message}`;
+    }
+  } catch (error) {
+    statusDiv.textContent = `网络错误：${error.message}`;
+  }
+}
+</script>
+</body>
+</html>
